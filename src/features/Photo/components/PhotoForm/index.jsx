@@ -1,39 +1,42 @@
 import { FastField, Form, Formik } from "formik";
 import React from "react";
-import { Button, FormGroup, Label } from "reactstrap";
+import { Button, FormGroup, Spinner } from "reactstrap";
 import { PHOTO_CATEGORY_OPTIONS } from "../../../../constants/globals";
-import Images from "../../../../constants/images";
 import InputField from "../../../../custom-fields/InputField";
+import RandomPhotoField from "../../../../custom-fields/RandomPhotoField";
 import SelectField from "../../../../custom-fields/SelectField";
-const PhotoForm = () => {
+import * as Yup from "yup";
+const PhotoForm = (props) => {
+  const { initialValues, isAddMode } = props;
+  const validationSchema = Yup.object().shape({
+    title: Yup.string().required("This field must be required"),
+    categoryId: Yup.number().required("This field must be required").nullable(),
+    // photo: Yup.string().required("This field must be required"),
+    photo: Yup.string().when("categoryId", {
+      is: 1,
+      then: Yup.string().required("This field must be required"),
+      otherwise: Yup.string().notRequired(),
+    }),
+  });
   return (
     <Formik
-      initialValues={{
-        title: "",
-        name: "",
-        categoryId: null,
-      }}
+      initialValues={initialValues}
+      onSubmit={props.onSubmit}
+      validationSchema={validationSchema}
     >
       {(formikProps) => {
+        const { values, errors, touched, isSubmitting } = formikProps;
+        console.log({ values, errors, touched });
         return (
           <Form>
-            <div className="form__title">
-              <InputField
-                label="Title"
-                placeholder="Eg: Wow nature ..."
-                type="text"
-                name="title"
-              />
-            </div>
-
-            <div className="form__name">
-              <InputField
-                label="Name"
-                placeholder="Eg: Wow nature ..."
-                type="text"
-                name="name"
-              />
-            </div>
+            <FastField
+              //props tu initialValue
+              name="title"
+              component={InputField}
+              //props minh truyen vao
+              label="Title"
+              placeholder="Eg: Wow nature ..."
+            />
 
             <FastField
               name="categoryId"
@@ -43,25 +46,17 @@ const PhotoForm = () => {
               options={PHOTO_CATEGORY_OPTIONS}
             />
 
-            <FormGroup>
-              <Label for="categoryId">Photo</Label>
-              <div>
-                <Button type="button" outline color="primary">
-                  Random a photo
-                </Button>
-              </div>
-              <div>
-                <img
-                  width="200px"
-                  height="200px"
-                  src={Images.COLORFUL_BG}
-                  alt="colorFulPicture"
-                />
-              </div>
-            </FormGroup>
+            <FastField
+              name="photo"
+              component={RandomPhotoField}
+              label="Photo"
+            />
 
             <FormGroup>
-              <Button color="primary">Add to album</Button>
+              <Button color={isAddMode ? "primary" : "success"}>
+                {isSubmitting && <Spinner size="sm" />}
+                {isAddMode ? "Add to album" : "Update your photo"}
+              </Button>
             </FormGroup>
           </Form>
         );
